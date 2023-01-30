@@ -476,13 +476,13 @@ func (r *ProtocolLXD) WithContext(ctx context.Context) InstanceServer {
 }
 
 // getUnderlyingHTTPTransport returns the *http.Transport used by the http client. If the http
-// client was initialized with a HTTPTransportWrapper, it returns the wrapped *http.Transport.
+// client was initialized with a HTTPTransporter, it returns the wrapped *http.Transport.
 func (r *ProtocolLXD) getUnderlyingHTTPTransport() (*http.Transport, error) {
 	switch t := r.http.Transport.(type) {
 	case *http.Transport:
 		return t, nil
-	case HTTPTransportWrapper:
-		return t.Transport, nil
+	case HTTPTransporter:
+		return t.Transport(), nil
 	default:
 		return nil, fmt.Errorf("unexpected http.Transport type, %T", r)
 	}
