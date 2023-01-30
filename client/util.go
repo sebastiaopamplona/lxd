@@ -13,7 +13,7 @@ import (
 	"github.com/lxc/lxd/shared"
 )
 
-func tlsHTTPClient(client *http.Client, tlsClientCert string, tlsClientKey string, tlsCA string, tlsServerCert string, insecureSkipVerify bool, proxy func(req *http.Request) (*url.URL, error), transportWrapper func(t *http.Transport) http.RoundTripper) (*http.Client, error) {
+func tlsHTTPClient(client *http.Client, tlsClientCert string, tlsClientKey string, tlsCA string, tlsServerCert string, insecureSkipVerify bool, proxy func(req *http.Request) (*url.URL, error), transportWrapper func(t *http.Transport) HTTPTransportWrapper) (*http.Client, error) {
 	// Get the TLS configuration
 	tlsConfig, err := shared.GetTLSConfigMem(tlsClientCert, tlsClientKey, tlsCA, tlsServerCert, insecureSkipVerify)
 	if err != nil {
@@ -231,4 +231,21 @@ func parseFilters(filters []string) string {
 		}
 	}
 	return strings.Join(result, " and ")
+}
+
+// HTTPTransportWrapper implements the http.RoundTripper
+// It wraps a *http.Transport, and it is used to add some pre and postprocessing
+// logic to http requests / responses.
+type HTTPTransportWrapper struct {
+	// Rt func called by RoundTrip
+	// It's the responsibility of the initiator of HTTPTransportWrapper
+	// to use Transport inside Rt
+	Rt func(*http.Request) (*http.Response, error)
+	// Transport what this struct wraps
+	Transport *http.Transport
+}
+
+// RoundTrip calls h.Rt, needed to implement http.RoundTripper.
+func (h HTTPTransportWrapper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return h.Rt(req)
 }
